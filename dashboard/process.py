@@ -1,73 +1,58 @@
 
-from enum import Enum
 
-import numpy as np
+import pandas as pd
 
-from dashboard.load import ActivitiesCatalog, PomodorosProcessed
-from dashboard.typed import TypedDataFrame
+from dashboard.load import PomodorosProcessed
+from dashboard.data import WeeklyStats, PomodoroStats
+from dashboard.kpi import DoLearnRatioKPI, DoLearnData, RedGreenRatioKPI, RedGreenData, BalanceCoefKPI, BalanceCoefData
 
 
-class PomodoroStats(TypedDataFrame):
-    schema = {
-        'done': np.float64,
-        'planned': np.float64,
-        'avg_done': np.float64,
-        'avg_planned': np.float64,
-        'complete_rate': np.float64,
-        'do_learn_ratio': np.float64,
-        'red_green_ratio': np.float64,
-        'balance_coef': np.float64
+def process_week(week: int, df: pd.DataFrame) -> pd.DataFrame:
+
+    result = {
+        'from_date': df.Date.min(),
+        'to_date': df.Date.max(),
+        'done': df.Pomodoros.sum(),
+        'planned': df.Planned.sum(),
+        'avg_done': None,
+        'avg_planned': None,
+        'do_learn_ratio': DoLearnRatioKPI.compute_value(DoLearnData(df)),
+        'red_green_ratio': RedGreenRatioKPI.compute_value(RedGreenData(df)),
+        'balance_coef': BalanceCoefKPI.compute_value(BalanceCoefData(df))
     }
+    result['avg_done'] = result['done'] / 7
+    result['avg_planned'] = result['planned'] / 7
+    return pd.DataFrame(result, index=[week])
 
 
-class WeeklyStats(PomodoroStats):
-    schema = {
-        'Week': np.int16,
-        'from_date': np.dtype('datetime64[ns]'),
-        'to_date': np.dtype('datetime64[ns]')
+def complete_rate(df: pd.DataFrame) -> pd.Series:
+    return df['done'] / df['planned']
+
+
+def compute_weekly_stats(data: PomodorosProcessed) -> WeeklyStats:
+    result = pd.concat([process_week(week, df) for week, df in data.df.groupby('Week')])
+    result['complete_rate'] = complete_rate(result)
+    result = WeeklyStats.convert(result.reset_index().rename(columns={'index':'Week'}))
+    return result
+
+
+def compute_overall_stats(data: PomodorosProcessed) -> PomodoroStats:
+    df = data.df
+    result = {
+        'done': df.Pomodoros.sum(),
+        'planned': df.Planned.sum(),
+        'avg_done': None,
+        'avg_planned': None,
+        'do_learn_ratio': DoLearnRatioKPI.compute_value(DoLearnData(df)),
+        'red_green_ratio': RedGreenRatioKPI.compute_value(RedGreenData(df)),
+        'balance_coef': BalanceCoefKPI.compute_value(BalanceCoefData(df))
     }
+    result['complete_rate'] = result['done'] / result['planned']
+    num_days = len(df['Date'].unique())
+    result['avg_done'] = result['done'] / num_days
+    result['avg_planned'] = result['planned'] / num_days
+    return PomodoroStats.convert(pd.DataFrame(result, index=[0]))
 
-
-class KpiZone(Enum):
-    RED = 1
-    YELLOW = 2
-    GREEN = 3
-
-
-class BaseKPI:
-
-    def __init__(self, value, target, zone: KpiZone):
-        self.value = value
-        self.target = target
-        self.zone = zone
-
-    def suggested_action(self) -> str:
-        return ""
-
-
-class WeeklyDoneKPI(BaseKPI):
-
-    def __init__(self, data: WeeklyStats):
-        pass
-
-
-class CompleteRateKPI(BaseKPI):
-
-    def __init__(self, data: WeeklyStats):
-        pass
-
-
-class RottenProjectKPI(BaseKPI):
-
-    def __init__(self, pomodoros: PomodorosProcessed, activities: ActivitiesCatalog):
-        pass
-
-
-def mse(p, q):
-    return np.sqrt(np.mean(np.sum(np.power((np.array(p) - np.array(q)), 2))))
-
-
-# function 1: () -> WeeklyStats
 
 # last_n_weeks_mean: (WeeklyStats, N) -> WeeklyStats
 
