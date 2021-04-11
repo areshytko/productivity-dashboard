@@ -4,7 +4,7 @@ POMODOROS_SPREADSHEET_ID = '1ushlABGAcGa9982wRDSEXz3bKjnaYqLE7Rl6A5w1jAg'
 POMODOROS_RANGE = 'pomodoros-2021!B:G'
 
 ACTIVITIES_SPREADSHEET_ID = '1ushlABGAcGa9982wRDSEXz3bKjnaYqLE7Rl6A5w1jAg'
-ACTIVITIES_RANGE = 'activities-catalog!B:E'
+ACTIVITIES_RANGE = 'activities-catalog!B:F'
 
 # ['life', 'personal', 'career', 'hobby', 'society', 'health']
 BALANCE_LIFE_DISTRIBUTION = [0, 0.05, 0.7, 0.2, 0.05, 0]

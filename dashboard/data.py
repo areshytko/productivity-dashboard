@@ -25,3 +25,13 @@ class WeeklyStats(PomodoroStats):
         'from_date': np.dtype('datetime64[ns]'),
         'to_date': np.dtype('datetime64[ns]')
     }
+
+
+class ActivityPomodorosData(TypedDataFrame):
+    schema = {
+        'Activity': object,
+        'Pomodoros': np.int16,
+        'Pomodoros_With_Subprojects': np.int16,
+        'Fraction': np.float64,
+        'Root_Project': object
+    }
