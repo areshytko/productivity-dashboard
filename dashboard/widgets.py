@@ -33,7 +33,7 @@ class ProjectDataFrameColorStyler:
 
 def print_projects_pomodoros(data: ActivityPomodorosData):
     colormap = px.colors.qualitative.Pastel + px.colors.qualitative.D3
-    df = data.df[['Activity', 'Pomodoros', 'Pomodoros_With_Subprojects', 'Fraction', 'Parent', 'Root_Project']]
+    df = data.df[['Activity', 'Fraction', 'Pomodoros_With_Subprojects', 'Pomodoros', 'Parent', 'Root_Project']]
     df.rename(columns={'Pomodoros_With_Subprojects': 'All Pomodoros'}, inplace=True)
 
     float_cols = [x for x in df.columns if df.dtypes[x] == np.float64]
@@ -102,7 +102,10 @@ def historical_data_table(weekly_stats: WeeklyStats):
 
 def done_planned_pomodoros_bar_chart(weekly_stats: WeeklyStats):
     st.subheader("Done and Planned Pomodoros Weekly History:")
-    st.bar_chart(weekly_stats.df[['Week', 'planned', 'done']].set_index('Week'))
+    df = weekly_stats.df.copy()
+    df.planned.fillna(0, inplace=True)
+    df.loc[:, 'not done'] = np.maximum(0, df.planned - df.done)
+    st.bar_chart(df[['Week', 'done', 'not done']].set_index('Week'))
 
 
 def pomodoros_bar_chart(weekly_stats: WeeklyStats):
