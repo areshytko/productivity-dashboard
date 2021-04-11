@@ -1,6 +1,6 @@
 """
 """
-
+import math
 from typing import Callable, Optional
 import datetime
 
@@ -32,23 +32,21 @@ class WeeklyDoneKPI(BaseKPI):
         today_done = self.raw_data.df.loc[self.raw_data.df.Date == pd.to_datetime(datetime.date.today()), 'Pomodoros'].sum()
 
         backlog = target - value + today_done
-        if backlog <= 0:
-            return KpiZone.GREEN
 
         today = datetime.date.today().weekday()
         no_rest_est = target / 7
-        no_rest_actual = backlog / (7 - today)
+        no_rest_actual = backlog / (7 - today) if 7 > today else math.inf
         self.pomodoros_left_7_days = max(0, no_rest_actual - today_done)
 
         # day_rest_est = target / 6
-        day_rest_actual = backlog / (6 - today)
+        day_rest_actual = backlog / (6 - today) if 6 > today else math.inf
         self.pomodoros_left_6_days = max(0, day_rest_actual - today_done)
 
         weekend_rest_est = target / 5
-        weekend_rest_actual = backlog / (5 - today)
+        weekend_rest_actual = backlog / (5 - today) if 5 > today else math.inf
         self.pomodoros_left_5_days = max(0, weekend_rest_actual - today_done)
 
-        if weekend_rest_actual <= weekend_rest_est:
+        if weekend_rest_actual <= weekend_rest_est or backlog - today_done <= 0:
             return KpiZone.GREEN
         elif no_rest_actual <= no_rest_est:
             return KpiZone.YELLOW
@@ -57,6 +55,16 @@ class WeeklyDoneKPI(BaseKPI):
 
     def suggested_action(self, formatter: Optional[Callable[[str], str]] = None) -> str:
         formatter = formatter or (lambda x: x)
-        return (f"{formatter(str(round(self.pomodoros_left_5_days)))} pomodoros left today in case of two days rest, " +
-                f"{formatter(str(round(self.pomodoros_left_6_days)))} for one day rest, " +
-                f"{formatter(str(round(self.pomodoros_left_7_days)))} for no rest days this week.")
+        pomodoros_5_days = formatter(str(round(self.pomodoros_left_5_days))
+                                     if not math.isinf(self.pomodoros_left_5_days)
+                                     else "--")
+        pomodoros_6_days = formatter(str(round(self.pomodoros_left_6_days))
+                                     if not math.isinf(self.pomodoros_left_6_days)
+                                     else "--")
+        pomodoros_7_days = formatter(str(round(self.pomodoros_left_7_days))
+                                     if not math.isinf(self.pomodoros_left_7_days)
+                                     else "--")
+
+        return (f"{pomodoros_5_days} pomodoros left today in case of two days rest, " +
+                f"{pomodoros_6_days} for one day rest, " +
+                f"{pomodoros_7_days} for no rest days this week.")

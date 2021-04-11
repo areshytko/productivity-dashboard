@@ -1,9 +1,11 @@
 
 
+from typing import Dict, Iterable, List
+
 import pandas as pd
 
 from dashboard.load import PomodorosProcessed
-from dashboard.data import WeeklyStats, PomodoroStats
+from dashboard.data import WeeklyStats, PomodoroStats, ActivityPomodorosData
 from dashboard.kpi import DoLearnRatioKPI, DoLearnData, RedGreenRatioKPI, RedGreenData, BalanceCoefKPI, BalanceCoefData
 
 
@@ -54,14 +56,45 @@ def compute_overall_stats(data: PomodorosProcessed) -> PomodoroStats:
     return PomodoroStats.convert(pd.DataFrame(result, index=[0]))
 
 
-# last_n_weeks_mean: (WeeklyStats, N) -> WeeklyStats
+def compute_descendants(children: Dict[str, List[str]], nodes: Iterable[str]) -> Dict[str, List[str]]:
+    result = {}
+    for node in nodes:
+        descendants = []
+        unprocessed = children.get(node, []).copy()
+        while unprocessed:
+            child = unprocessed.pop()
+            descendants.append(child)
+            unprocessed += children.get(child, [])
+        result[node] = descendants
+    return result
 
-# current_kpi: (WeeklyStats) -> WeeklyStats
 
-# today_done, planned: (PomodorosProcessed) -> tuple[int, int]
+def compute_activity_pomodoros(data: PomodorosProcessed) -> ActivityPomodorosData:
+    df = data.df.groupby('Activity').agg({
+        'Pomodoros': 'sum',
+        'Parent': 'max'
+    }).reset_index()
 
-# current week KPI zones mechanism: percentage improvement from historical period
+    children = df.groupby('Parent').agg({
+        'Activity': lambda x: x.to_list()
+    }).reset_index()
+    children = children.loc[children.Parent.str.len() > 0, :].set_index('Parent')
+    children = children.Activity.to_dict()
+    descendants_dict = compute_descendants(children, df.Activity)
 
-# suggested actions
+    df.loc[:, 'Pomodoros_With_Subprojects'] = 0
+    df.loc[:, 'Root_Project'] = df.Activity
+    for idx, row in df.iterrows():
+        descendants = descendants_dict[row['Activity']]
+        descendants = df.Activity.isin(descendants)
+        df.loc[idx, 'Pomodoros_With_Subprojects'] = df.loc[descendants, 'Pomodoros'].sum()
+        if not row['Parent']:
+            df.loc[descendants, 'Root_Project'] = row['Activity']
 
-# result: WeeklyDoneKPI, CompleteRateKPI, WeeklyStats
+    df.loc[:, 'Pomodoros_With_Subprojects'] = df.Pomodoros_With_Subprojects + df.Pomodoros
+    df.loc[:, ['Pomodoros', 'Pomodoros_With_Subprojects']].fillna(0, inplace=True)
+    all_pomodoros = df.Pomodoros.sum()
+    df.loc[:, 'Fraction'] = df.Pomodoros_With_Subprojects / all_pomodoros if all_pomodoros > 0 else 0
+    df.sort_values('Pomodoros_With_Subprojects', ascending=False, inplace=True)
+
+    return ActivityPomodorosData.convert(df)

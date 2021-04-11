@@ -50,6 +50,9 @@ class ActivitiesCatalog(JsonData):
                 },
                 "Comment": {
                     "type": "string"
+                },
+                "Parent": {
+                    "type": "string"
                 }
             },
             "required": ['Activity', "Active"]
@@ -59,7 +62,8 @@ class ActivitiesCatalog(JsonData):
 
 class PomodorosProcessed(Pomodoros):
     schema = {
-        tag: bool for tag in ActivitiesCatalog.TAGS
+        **{tag: bool for tag in ActivitiesCatalog.TAGS},
+        **{"Parent": object}
     }
 
 
@@ -114,10 +118,11 @@ def load_catalog(credentials: Credentials,
 
 
 def merge_data(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> PomodorosProcessed:
-    activity_dict = {x['Activity']: x['Tags'] for x in catalog.data}
-    tags = pomodoros.df.Activity.map(lambda x: activity_dict[x])
+    activity_dict = {x['Activity']: (x.get('Tags', []), x.get('Parent', "")) for x in catalog.data}
+    tags = pomodoros.df.Activity.map(lambda x: activity_dict[x][0])
     tags_df = boolean_df(tags, ActivitiesCatalog.TAGS)
     df = pd.concat([pomodoros.df, tags_df], axis=1)
+    df.loc[:, 'Parent'] = pomodoros.df.Activity.map(lambda x: activity_dict[x][1])
     return PomodorosProcessed(df)
 
 
