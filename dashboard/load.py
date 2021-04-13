@@ -117,7 +117,18 @@ def load_catalog(credentials: Credentials,
     return activities
 
 
+def fill_all_activities(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> Pomodoros:
+    activities = (x['Activity'] for x in catalog.data)
+    week = pomodoros.df.Week.min()
+    date = pomodoros.df.Date.min()
+    template = {key: None for key in Pomodoros.schema.keys()}
+    template = {**template, **{'Week': week, 'Date': date}}
+    addon = pd.DataFrame([{**template, **{'Activity': x}} for x in activities])
+    return Pomodoros.convert(pd.concat([pomodoros.df, addon]))
+
+
 def merge_data(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> PomodorosProcessed:
+    pomodoros = fill_all_activities(pomodoros=pomodoros, catalog=catalog)
     activity_dict = {x['Activity']: (x.get('Tags', []), x.get('Parent', "")) for x in catalog.data}
     tags = pomodoros.df.Activity.map(lambda x: activity_dict[x][0])
     tags_df = boolean_df(tags, ActivitiesCatalog.TAGS)
