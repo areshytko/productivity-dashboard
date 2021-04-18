@@ -31,6 +31,24 @@ streamlit run app.py ./configs/default.yaml
 
 ## Google Sheets tables expected schema
 
+#### Activities Catalog Sheet
+*See the schema in [load.py](dashboard/load.py)*
+- Activity
+- Parent
+- Tags
+- Active
+- Comment
+
+#### Pomodoros Sheet
+*See the schema in [load.py](dashboard/load.py)*
+- Week
+- Date
+- Activity
+- Comment
+- Pomodoros
+- Planned
+- Weekly Done KPI
+
 ## Changing App credentials
 
 If you want to change App credentials in `credentials.json`, please
