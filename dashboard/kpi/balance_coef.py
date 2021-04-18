@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-import dashboard.config as config
+from dashboard.config import Config
 from dashboard.kpi.base import BaseKPI
 from dashboard.typed import TypedDataFrame
 
@@ -26,7 +26,7 @@ def mse(p, q):
 class BalanceCoefKPI(BaseKPI):
 
     @staticmethod
-    def desired_distr() -> pd.Series:
+    def desired_distr(config: Config) -> pd.Series:
         return pd.Series(config.BALANCE_LIFE_DISTRIBUTION, index=BalanceCoefData.LIFE_DOMAINS)
 
     @staticmethod
@@ -34,7 +34,7 @@ class BalanceCoefKPI(BaseKPI):
         if desired_dist is not None:
             assert np.all(desired_dist.index == BalanceCoefData.LIFE_DOMAINS)
         else:
-            desired_dist = BalanceCoefKPI.desired_distr()
+            desired_dist = BalanceCoefKPI.desired_distr(config=Config())
 
         df = week.df
         all_pomodoros = df.Pomodoros.sum()

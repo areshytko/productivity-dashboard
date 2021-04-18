@@ -8,3 +8,4 @@ streamlit==0.79.0
 watchdog==2.0.2
 plotly==4.14.3
 plotly-express==0.4.1
+PyYAML==5.4.1

@@ -19,7 +19,8 @@ class Pomodoros(TypedDataFrame):
         'Activity': object,
         'Comment': object,
         'Pomodoros': np.float64,
-        'Planned': np.float64
+        'Planned': np.float64,
+        'Weekly Done KPI': np.float64
     }
 
 
@@ -93,7 +94,7 @@ def load_pomodoros(credentials: Credentials,
         token=credentials,
         spreadsheet_id=spreadsheet_id,
         range_name=range_name,
-        merged_cols=['Week', 'Date']
+        merged_cols=['Week', 'Date', 'Weekly Done KPI']
     )
 
     return Pomodoros.convert(data)

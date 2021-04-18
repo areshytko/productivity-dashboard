@@ -9,7 +9,7 @@ import pandas as pd
 from dashboard.kpi.base import BaseKPI, KpiZone, get_current_week, get_recent_weeks
 from dashboard.data import WeeklyStats
 from dashboard.load import PomodorosProcessed
-import dashboard.config as config
+from dashboard.config import Config
 
 
 class WeeklyDoneKPI(BaseKPI):
@@ -20,7 +20,7 @@ class WeeklyDoneKPI(BaseKPI):
         current = get_current_week(data)
         recent = get_recent_weeks(data)
         value = int(current.df.done.iloc[0])
-        target = round(recent.df.done.median() * config.KPI_IMPROVEMENT_RATE)
+        target = round(recent.df.done.median() * Config().KPI_IMPROVEMENT_RATE)
         self.pomodoros_left_7_days = None
         self.pomodoros_left_6_days = None
         self.pomodoros_left_5_days = None

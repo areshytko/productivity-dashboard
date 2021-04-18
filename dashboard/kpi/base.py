@@ -6,7 +6,7 @@ from enum import Enum
 import datetime
 
 from dashboard.data import WeeklyStats
-import dashboard.config as config
+from dashboard.config import Config
 
 
 class KpiZone(Enum):
@@ -25,7 +25,7 @@ def get_current_week(weekly_stats: WeeklyStats) -> WeeklyStats:
 def get_recent_weeks(weekly_stats: WeeklyStats) -> WeeklyStats:
     current = weekly_stats.df.Week.max()
     df = weekly_stats.df
-    return WeeklyStats(df.loc[(current - df.Week <= config.KPI_HISTORICAL_WINDOW) & (current - df.Week > 0), :])
+    return WeeklyStats(df.loc[(current - df.Week <= Config().KPI_HISTORICAL_WINDOW) & (current - df.Week > 0), :])
 
 
 class BaseKPI:

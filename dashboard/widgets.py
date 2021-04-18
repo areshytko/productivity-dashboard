@@ -7,7 +7,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-import dashboard.config as config
+from dashboard.config import Config
 from dashboard.process import ActivityPomodorosData
 from dashboard.load import PomodorosProcessed
 from dashboard.process import WeeklyStats, PomodoroStats
@@ -178,7 +178,7 @@ def print_suggested_action(weekly_done_kpi: WeeklyDoneKPI):
     st.markdown(weekly_done_kpi.suggested_action(formatter=formatter), unsafe_allow_html=True)
 
 
-def sidebar():
+def sidebar(config: Config):
     config.KPI_IMPROVEMENT_RATE = st.sidebar.number_input(
         "KPI improvement rate",
         min_value=1.0,

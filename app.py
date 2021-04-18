@@ -1,9 +1,11 @@
 
+import argparse
+
 import streamlit as st
 
 from dashboard.auth import authenticate
 from dashboard.widgets import *
-import dashboard.config as config
+from dashboard.config import Config
 from dashboard.gheets import Credentials
 from dashboard.load import PomodorosProcessed, load
 from dashboard.process import compute_weekly_stats, compute_overall_stats,compute_activity_pomodoros
@@ -13,8 +15,14 @@ from dashboard.widgets import print_projects_pomodoros, projects_bar_chart
 st.set_page_config(layout="wide")
 
 
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Productivity Dashboard')
+    parser.add_argument('config', default='./configs/default.yaml', help='path to config file', nargs='?')
+    return parser.parse_args()
+
+
 @st.cache
-def load_data(credentials: Credentials) -> PomodorosProcessed:
+def load_data(credentials: Credentials, config: Config) -> PomodorosProcessed:
     return load(
         credentials=credentials,
         pomodoros_spreadsheet_id=config.POMODOROS_SPREADSHEET_ID,
@@ -24,11 +32,14 @@ def load_data(credentials: Credentials) -> PomodorosProcessed:
     )
 
 
-sidebar()
+args = parse_arguments()
+config = Config.load(args.config)
+
+sidebar(config=config)
 
 creds = authenticate()
 if creds:
-    raw_data = load_data(creds)
+    raw_data = load_data(creds, config=config)
     weekly_stats = compute_weekly_stats(raw_data)
     overall_stats = compute_overall_stats(raw_data)
     weekly_done_kpi = WeeklyDoneKPI(weekly_stats, raw_data)

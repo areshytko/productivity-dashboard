@@ -15,7 +15,7 @@ def process_week(week: int, df: pd.DataFrame) -> pd.DataFrame:
         'from_date': df.Date.min(),
         'to_date': df.Date.max(),
         'done': df.Pomodoros.sum(),
-        'planned': df.Planned.sum(),
+        'planned': df['Weekly Done KPI'].max(),
         'avg_done': None,
         'avg_planned': None,
         'do_learn_ratio': DoLearnRatioKPI.compute_value(DoLearnData(df)),
@@ -42,7 +42,7 @@ def compute_overall_stats(data: PomodorosProcessed) -> PomodoroStats:
     df = data.df
     result = {
         'done': df.Pomodoros.sum(),
-        'planned': df.Planned.sum(),
+        'planned': df.groupby('Week')['Weekly Done KPI'].max().sum(),
         'avg_done': None,
         'avg_planned': None,
         'do_learn_ratio': DoLearnRatioKPI.compute_value(DoLearnData(df)),
