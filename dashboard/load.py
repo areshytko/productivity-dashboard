@@ -1,7 +1,7 @@
 """
 Defines the schema and retrieval for the data
 """
-
+import datetime
 from typing import Any, List
 
 import numpy as np
@@ -66,6 +66,7 @@ class PomodorosProcessed(Pomodoros):
         **{tag: bool for tag in ActivitiesCatalog.TAGS},
         **{"Parent": object}
     }
+    active_projects = []
 
 
 def load(credentials: Credentials,
@@ -83,6 +84,9 @@ def load(credentials: Credentials,
         spreadsheet_id=activities_spreadsheet_id,
         range_name=activities_range
     )
+
+    PomodorosProcessed.active_projects = [x['Activity'] for x in catalog.data if x['Active']]
+
     result = merge_data(pomodoros=pomodoros, catalog=catalog)
     return result
 
@@ -128,13 +132,20 @@ def fill_all_activities(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> Pom
     return Pomodoros.convert(pd.concat([pomodoros.df, addon]))
 
 
+def assert_active_projects(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> List[str]:
+    active_projects = [c['Activity'] for c in catalog.data if c['Active']]
+    cond = (pomodoros.df.Date == (pd.to_datetime(datetime.date.today())))
+    today_projects = set(pomodoros.df.loc[cond,]['Activity'])
+    return [project for project in active_projects if project not in today_projects]
+
+
 def merge_data(pomodoros: Pomodoros, catalog: ActivitiesCatalog) -> PomodorosProcessed:
     pomodoros = fill_all_activities(pomodoros=pomodoros, catalog=catalog)
-    activity_dict = {x['Activity']: (x.get('Tags', []), x.get('Parent', "")) for x in catalog.data}
-    tags = pomodoros.df.Activity.map(lambda x: activity_dict[x][0])
+    activity_dict = {x['Activity']: x for x in catalog.data}
+    tags = pomodoros.df.Activity.map(lambda x: activity_dict[x].get('Tags', []))
     tags_df = boolean_df(tags, ActivitiesCatalog.TAGS)
     df = pd.concat([pomodoros.df, tags_df], axis=1)
-    df.loc[:, 'Parent'] = pomodoros.df.Activity.map(lambda x: activity_dict[x][1])
+    df.loc[:, 'Parent'] = pomodoros.df.Activity.map(lambda x: activity_dict[x].get('Parent', ""))
     return PomodorosProcessed(df)
 
 

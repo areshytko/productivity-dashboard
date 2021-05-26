@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 
 from dashboard.config import Config
+from dashboard.kpi.rotten import build_rotten_projects_table
 from dashboard.process import ActivityPomodorosData
 from dashboard.load import PomodorosProcessed
 from dashboard.process import WeeklyStats, PomodoroStats
@@ -197,3 +198,25 @@ def sidebar(config: Config):
         "Balanced life distribution: [life, personal, career, hobby, society, health]",
         config.BALANCE_LIFE_DISTRIBUTION)
     )
+
+
+def rotten_projects_table(raw_data: PomodorosProcessed):
+    data = build_rotten_projects_table(raw_data)
+    config = Config()
+    green_threshold = config.ROTTEN_PROJECT_GREEN_THRESHOLD
+    yellow_threshold = config.ROTTEN_PROJECT_YELLOW_THRESHOLD
+
+    def colorize(row):
+        days = row['Inactive Days']
+        if days < 0:
+            color = 'white'
+        elif days <= green_threshold:
+            color = 'rgb(210, 229, 158)'
+        elif days <= yellow_threshold:
+            color = 'rgb(252, 231, 128)'
+        else:
+            color = 'rgb(255, 143, 102)'
+        return [f"background-color: {color}"] * len(row)
+
+    df = data.df.sort_values(by='Inactive Days', ascending=False).reset_index(drop=True).style.apply(colorize, axis=1)
+    st.dataframe(df)

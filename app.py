@@ -49,6 +49,7 @@ if creds:
     print_suggested_action(weekly_done_kpi)
 
     pomodoros_bar_chart(weekly_stats)
+    rotten_projects_table(raw_data)
 
     left_column, right_column = st.beta_columns(2)
 
