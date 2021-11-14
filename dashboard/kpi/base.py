@@ -18,7 +18,7 @@ class KpiZone(Enum):
 def get_current_week(weekly_stats: WeeklyStats) -> WeeklyStats:
     today = datetime.date.today()
     result = weekly_stats.df.loc[weekly_stats.df.Week == weekly_stats.df.Week.max(), :]
-    assert result.from_date.iloc[0] <= today <= result.to_date.iloc[0]
+    assert result.from_date.iloc[0] <= today <= result.to_date.iloc[0], "Today must be present in the last week of a spreadsheet data"
     return WeeklyStats(result)
 
 

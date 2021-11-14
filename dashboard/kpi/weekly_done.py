@@ -20,7 +20,7 @@ class WeeklyDoneKPI(BaseKPI):
         current = get_current_week(data)
         recent = get_recent_weeks(data)
         value = int(current.df.done.iloc[0])
-        target = round(recent.df.done.median() * Config().KPI_IMPROVEMENT_RATE)
+        target = round(recent.df.done.median() * Config().KPI_IMPROVEMENT_RATE) if len(recent.df) > 0 else 0
         self.pomodoros_left_7_days = None
         self.pomodoros_left_6_days = None
         self.pomodoros_left_5_days = None
