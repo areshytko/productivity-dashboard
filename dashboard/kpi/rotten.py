@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from dashboard.load import PomodorosProcessed
-from dashboard.typed import TypedDataFrame
+from typedframe import TypedDataFrame
 
 
 class RottenTable(TypedDataFrame):

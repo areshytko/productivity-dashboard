@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from dashboard.typed import TypedDataFrame
+from typedframe import TypedDataFrame
 
 
 class PomodoroStats(TypedDataFrame):

@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 from dashboard.kpi.base import BaseKPI
-from dashboard.typed import TypedDataFrame
+from typedframe import TypedDataFrame
 
 
 class RedGreenData(TypedDataFrame):

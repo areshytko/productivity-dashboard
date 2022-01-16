@@ -9,7 +9,7 @@ import pandas as pd
 
 from dashboard.gheets import Credentials, get_data
 from dashboard.jsondata import JsonData
-from dashboard.typed import TypedDataFrame
+from typedframe import TypedDataFrame
 
 
 class Pomodoros(TypedDataFrame):

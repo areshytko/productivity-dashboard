@@ -6,7 +6,7 @@ import pandas as pd
 
 from dashboard.config import Config
 from dashboard.kpi.base import BaseKPI
-from dashboard.typed import TypedDataFrame
+from typedframe import TypedDataFrame
 
 
 class BalanceCoefData(TypedDataFrame):
