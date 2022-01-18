@@ -202,13 +202,6 @@ def print_current_monthly_kpi(kpi: MonthlyPercentageKPI):
 
 
 def monthly_kpi_bar_chart(kpi: MonthlyPercentageKPI):
-    st.subheader("Monthly KPI History:")
-    df = kpi.df[['month', 'kpi']]
-    df.month = df.month.dt.date
-    df['a'] = 1 - df.kpi
-    st.bar_chart(df.rename(columns={'kpi': 'gp %'}).set_index('month'))
-
-def monthly_kpi_bar_chart_2(kpi: MonthlyPercentageKPI):
     import altair as alt
 
     df = kpi.df[['month', 'kpi']]
@@ -226,7 +219,8 @@ def monthly_kpi_bar_chart_2(kpi: MonthlyPercentageKPI):
         order=alt.Order(
             'type',
             sort='ascending'
-        )
+        ),
+        tooltip=['month', 'kpi']
     )
     st.subheader("Monthly KPI History:")
     st.altair_chart(c, use_container_width=True)

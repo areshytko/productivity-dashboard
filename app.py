@@ -61,7 +61,7 @@ if creds:
     with left:
         pomodoros_bar_chart(weekly_stats)
     with right:
-        monthly_kpi_bar_chart_2(monthly_kpi)
+        monthly_kpi_bar_chart(monthly_kpi)
 
     monthly_goals_tree(monthly_data)
 
