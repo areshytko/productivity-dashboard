@@ -199,7 +199,7 @@ def print_current_monthly_kpi(kpi: MonthlyPercentageKPI):
         return f"{dow}"
 
     st.markdown(f"{kpi_value} monthly goal points closed. Target value: {kpi_target}. You have achieved {goals_achieved} goals of {goals_planned} planned.", unsafe_allow_html=True)
-    st.markdown(f"Close {gp_to_finish} goal points till {deadline(next_deadline)}. Recommend to close {gp_to_finish_today} goal points today", unsafe_allow_html=True)
+    st.markdown(f"Close {gp_to_finish} goal points till {deadline(next_deadline)} or {gp_to_finish_today} goal points today", unsafe_allow_html=True)
 
 
 def monthly_kpi_bar_chart(kpi: MonthlyPercentageKPI):
