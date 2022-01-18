@@ -1,14 +1,18 @@
-
+import datetime
+from math import floor
 from typing import List
 import json
 
 import streamlit as st
+from streamlit_echarts import st_echarts
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 from dashboard.config import Config
 from dashboard.kpi.rotten import build_rotten_projects_table
+from dashboard.monthly import MonthlyPercentageKPI, MonthlyGoalsData
 from dashboard.process import ActivityPomodorosData
 from dashboard.load import PomodorosProcessed
 from dashboard.process import WeeklyStats, PomodoroStats
@@ -111,7 +115,7 @@ def done_planned_pomodoros_bar_chart(weekly_stats: WeeklyStats):
 
 def pomodoros_bar_chart(weekly_stats: WeeklyStats):
     st.subheader("Pomodoros Weekly History:")
-    st.bar_chart(weekly_stats.df[['Week', 'done']].set_index('Week'))
+    st.bar_chart(weekly_stats.df[['Week', 'done']].rename(columns={'done': '# pom.'}).set_index('Week'))
 
 
 def projects_pie_chart(raw_data: PomodorosProcessed):
@@ -168,15 +172,156 @@ def zone_color(zone: KpiZone) -> str:
         raise ValueError(f"Unknown KPI Zone: {zone}")
 
 
-def print_current_kpi(weekly_done_kpi: WeeklyDoneKPI):
+def print_current_pomodoros_kpi(weekly_done_kpi: WeeklyDoneKPI):
     value = _text(weekly_done_kpi.value, color=zone_color(weekly_done_kpi.zone), size=2)
     target = _text(weekly_done_kpi.target, color=zone_color(weekly_done_kpi.zone), size=2)
     st.markdown(value + " of " + target + " pomodoros done this week.", unsafe_allow_html=True)
 
 
-def print_suggested_action(weekly_done_kpi: WeeklyDoneKPI):
+def print_pomodoros_suggested_action(weekly_done_kpi: WeeklyDoneKPI):
     formatter = lambda x: _text(x, color=zone_color(weekly_done_kpi.zone), size=2)
     st.markdown(weekly_done_kpi.suggested_action(formatter=formatter), unsafe_allow_html=True)
+
+
+def print_current_monthly_kpi(kpi: MonthlyPercentageKPI):
+    kpi_data = kpi.get_current_kpi()
+    gp_to_finish, next_deadline = kpi.gp_to_finish_this_week()
+    kpi_value = _text(str(round(kpi_data['kpi'], 2)), color=zone_color(kpi_data['zone']), size=2)
+    kpi_target = _text(str(round(kpi_data['target'], 2)), color=zone_color(kpi_data['zone']), size=2)
+    goals_planned = _text(str(kpi_data['goals_planned']), color=zone_color(kpi_data['zone']), size=1.5)
+    goals_achieved = _text(str(kpi_data['goals_done']), color=zone_color(kpi_data['zone']), size=1.5)
+    gp_to_finish = _text(gp_to_finish, color=zone_color(kpi_data['zone']), size=2)
+
+    def deadline(dt: datetime.datetime) -> str:
+        dows = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        dow = dows[dt.date().weekday()]
+        return f"{dow}"
+
+    st.markdown(f"{kpi_value} monthly goal points achieved. Target value: {kpi_target}. You have achieved {goals_achieved} goals of {goals_planned} planned.", unsafe_allow_html=True)
+    st.markdown(f"Achieve {gp_to_finish} goal points till {deadline(next_deadline)}.", unsafe_allow_html=True)
+
+
+def monthly_kpi_bar_chart(kpi: MonthlyPercentageKPI):
+    st.subheader("Monthly KPI History:")
+    df = kpi.df[['month', 'kpi']]
+    df.month = df.month.dt.date
+    df['a'] = 1 - df.kpi
+    st.bar_chart(df.rename(columns={'kpi': 'gp %'}).set_index('month'))
+
+def monthly_kpi_bar_chart_2(kpi: MonthlyPercentageKPI):
+    import altair as alt
+
+    df = kpi.df[['month', 'kpi']]
+    df.month = df.month.map(lambda x: f"{x.year}-{x.month}")
+    df['type'] = 'done'
+    df2 = df.copy()
+    df2['type'] = 'undone'
+    df2.kpi = 1 - df2.kpi
+    df = pd.concat([df, df2])
+
+    c = alt.Chart(df).mark_bar().encode(
+        y=alt.Y('sum(kpi)', stack="normalize", axis=alt.Axis(title=None)),
+        x=alt.X('month', axis=alt.Axis(title=None)),
+        color='type',
+        order=alt.Order(
+            'type',
+            sort='ascending'
+        )
+    )
+    st.subheader("Monthly KPI History:")
+    st.altair_chart(c, use_container_width=True)
+
+
+def monthly_goals_tree(goals: MonthlyGoalsData):
+
+    cmap = plt.get_cmap('viridis')
+
+    def float2int(c):
+        f2 = max(0.0, min(1.0, c))
+        return floor(255 if f2 == 1.0 else f2 * 256.0)
+
+    def colorize(node):
+        r, g, b, a = cmap(float(node['done']))
+        return {**node, **{
+            'itemStyle': {
+                'color': '#%02x%02x%02x' % (float2int(r), float2int(g), float2int(b))
+            }
+        }}
+
+    data = goals.as_tree(node_formatter=colorize)
+    options = {
+        'tooltip': {
+            'trigger': 'item',
+            'triggerOn': 'mousemove'
+        },
+        'series': [
+            {
+                'type': 'tree',
+                'id': 0,
+                'name': 'tree1',
+                'data': [data],
+                # 'top': '10%',
+                'left': '5%',
+                # 'bottom': '1%',
+                # 'right': '20%',
+                'symbolSize': 7,
+                'edgeShape': 'polyline',
+                'edgeForkPosition': '50%',
+                'initialTreeDepth': 3,
+                'lineStyle': {
+                    'width': 2
+                },
+                'label': {
+                    'backgroundColor': '#fff',
+                    'position': 'left',
+                    'verticalAlign': 'middle',
+                    'align': 'right'
+                },
+                'leaves': {
+                    'label': {
+                        'position': 'right',
+                        'verticalAlign': 'middle',
+                        'align': 'left'
+                    }
+                },
+                'emphasis': {
+                    'focus': 'descendant'
+                },
+                'expandAndCollapse': True
+            }
+        ]
+    }
+
+    st_echarts(options=options, height=Config().MONTHLY_GOALS_TREE_CHART_HEIGHT)
+
+
+def print_monthly_goals(goals: MonthlyGoalsData):
+    goals = goals.get_current_goals()
+    st.dataframe(goals.df)
+
+    def format_subgoal(row) -> str:
+        result = row['Subgoal']
+        if row['Done'] == 1:
+            result = f"~~*{result}*~~"
+        return f"  - {result}"
+
+    def format_goal(row) -> str:
+        result = row['Goal']
+        if row['Done'] == 1:
+            result = f"~~*{result}*~~"
+        return f"- {result}"
+
+        text = "\n".join([format_subgoal(row) for _, row in x.iterrows() if len(row['Subgoal']) > 0 and row['Subgoal'] != 'None'])
+        return pd.DataFrame({'subgoal_text': text, 'Done': (x['Done'] == 1).all()}, index=[x.index[0]])
+
+    def collect_goals(x):
+        text = "\n".join([f"{format_goal(row)}\n{row['subgoal_text']}" for _, row in x.iterrows()])
+        return pd.DataFrame({'text': text}, index=[x.index[0]])
+
+    df = goals.df.groupby(['Strategic Track', 'Goal']).apply(collect_subgoals)
+    df = df.reset_index().groupby('Strategic Track').apply(collect_goals).reset_index()
+    text = "\n".join([f"### {row['Strategic Track']}\n{row['text']}" for _, row in df.iterrows()])
+    st.markdown(text)
 
 
 def sidebar(config: Config):
@@ -218,5 +363,6 @@ def rotten_projects_table(raw_data: PomodorosProcessed):
             color = 'rgb(255, 143, 102)'
         return [f"background-color: {color}"] * len(row)
 
+    st.subheader("Current Active Project Rotten Table:")
     df = data.df.sort_values(by='Inactive Days', ascending=False).reset_index(drop=True).style.apply(colorize, axis=1)
     st.dataframe(df)

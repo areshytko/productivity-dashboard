@@ -1,5 +1,6 @@
 
 import argparse
+from typing import Tuple
 
 import streamlit as st
 
@@ -22,14 +23,20 @@ def parse_arguments() -> argparse.Namespace:
 
 
 @st.cache
-def load_data(credentials: Credentials, config: Config) -> PomodorosProcessed:
-    return load(
+def load_data(credentials: Credentials, config: Config) -> Tuple[PomodorosProcessed, MonthlyGoalsData]:
+    pomodoros = load(
         credentials=credentials,
         pomodoros_spreadsheet_id=config.POMODOROS_SPREADSHEET_ID,
         pomodoros_range=config.POMODOROS_RANGE,
         activities_spreadsheet_id=config.ACTIVITIES_SPREADSHEET_ID,
         activities_range=config.ACTIVITIES_RANGE
     )
+    monthly_goals = MonthlyGoalsData.load(
+        credentials=credentials,
+        spreadsheet_id=config.MONTHLY_GOALS_SPREADSHEET_ID,
+        range_name=config.MONTHLY_GOALS_RANGE,
+    )
+    return pomodoros, monthly_goals
 
 
 args = parse_arguments()
@@ -39,27 +46,36 @@ sidebar(config=config)
 
 creds = authenticate()
 if creds:
-    raw_data = load_data(creds, config=config)
+    raw_data, monthly_data = load_data(creds, config=config)
+    monthly_kpi = MonthlyPercentageKPI.compute(monthly_data)
     weekly_stats = compute_weekly_stats(raw_data)
     overall_stats = compute_overall_stats(raw_data)
     weekly_done_kpi = WeeklyDoneKPI(weekly_stats, raw_data)
     projects = compute_activity_pomodoros(raw_data)
 
-    print_current_kpi(weekly_done_kpi)
-    print_suggested_action(weekly_done_kpi)
+    print_current_pomodoros_kpi(weekly_done_kpi)
+    print_pomodoros_suggested_action(weekly_done_kpi)
+    print_current_monthly_kpi(monthly_kpi)
 
-    pomodoros_bar_chart(weekly_stats)
-    rotten_projects_table(raw_data)
+    left, right = st.beta_columns(2)
+    with left:
+        pomodoros_bar_chart(weekly_stats)
+    with right:
+        monthly_kpi_bar_chart_2(monthly_kpi)
+
+    monthly_goals_tree(monthly_data)
+
+    _, col, _ = st.beta_columns((1, 2, 1))
+    with col:
+        rotten_projects_table(raw_data)
 
     left_column, right_column = st.beta_columns(2)
 
     with left_column:
         red_green_pomodoros_bar_chart(weekly_stats)
-        done_planned_pomodoros_bar_chart(weekly_stats)
 
     with right_column:
         do_learn_pomodoros_bar_chart(weekly_stats)
-        balance_coef_line_chart(weekly_stats)
 
     projects_bar_chart(weeks=raw_data, projects=projects)
 

@@ -6,10 +6,10 @@ from typing import Any, List
 
 import numpy as np
 import pandas as pd
+from typedframe import TypedDataFrame
 
 from dashboard.gheets import Credentials, get_data
 from dashboard.jsondata import JsonData
-from typedframe import TypedDataFrame
 
 
 class Pomodoros(TypedDataFrame):
