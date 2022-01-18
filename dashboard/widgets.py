@@ -185,20 +185,21 @@ def print_pomodoros_suggested_action(weekly_done_kpi: WeeklyDoneKPI):
 
 def print_current_monthly_kpi(kpi: MonthlyPercentageKPI):
     kpi_data = kpi.get_current_kpi()
-    gp_to_finish, next_deadline = kpi.gp_to_finish_this_week()
+    gp_to_finish_today, gp_to_finish, next_deadline = kpi.gp_to_finish_this_week()
     kpi_value = _text(str(round(kpi_data['kpi'], 2)), color=zone_color(kpi_data['zone']), size=2)
     kpi_target = _text(str(round(kpi_data['target'], 2)), color=zone_color(kpi_data['zone']), size=2)
     goals_planned = _text(str(kpi_data['goals_planned']), color=zone_color(kpi_data['zone']), size=1.5)
     goals_achieved = _text(str(kpi_data['goals_done']), color=zone_color(kpi_data['zone']), size=1.5)
-    gp_to_finish = _text(gp_to_finish, color=zone_color(kpi_data['zone']), size=2)
+    gp_to_finish = _text(str(gp_to_finish), color=zone_color(kpi_data['zone']), size=2)
+    gp_to_finish_today = _text(str(gp_to_finish_today), color=zone_color(kpi_data['zone']), size=2)
 
     def deadline(dt: datetime.datetime) -> str:
         dows = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         dow = dows[dt.date().weekday()]
         return f"{dow}"
 
-    st.markdown(f"{kpi_value} monthly goal points achieved. Target value: {kpi_target}. You have achieved {goals_achieved} goals of {goals_planned} planned.", unsafe_allow_html=True)
-    st.markdown(f"Achieve {gp_to_finish} goal points till {deadline(next_deadline)}.", unsafe_allow_html=True)
+    st.markdown(f"{kpi_value} monthly goal points closed. Target value: {kpi_target}. You have achieved {goals_achieved} goals of {goals_planned} planned.", unsafe_allow_html=True)
+    st.markdown(f"Close {gp_to_finish} goal points till {deadline(next_deadline)}. Recommend to close {gp_to_finish_today} goal points today", unsafe_allow_html=True)
 
 
 def monthly_kpi_bar_chart(kpi: MonthlyPercentageKPI):

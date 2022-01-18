@@ -169,7 +169,7 @@ class MonthlyPercentageKPI(TypedDataFrame):
         )
         return result
 
-    def gp_to_finish_this_week(self) -> Tuple[int, datetime.date]:
+    def gp_to_finish_this_week(self) -> Tuple[int, int, datetime.date]:
         today = datetime.datetime.today()
         kpi = self.get_current_kpi()
         planned = kpi['goal_points_planned']
@@ -186,12 +186,13 @@ def get_next_reporting_day(dt: datetime.date) -> datetime.date:
         return datetime.date(year=dt.year, month=dt.month, day=month_days)
 
 
-def gp_to_finish(dt: datetime.date, planned_gp: int, done_gp: float) -> Tuple[int, datetime.date]:
+def gp_to_finish(dt: datetime.date, planned_gp: int, done_gp: float) -> Tuple[int, int, datetime.date]:
     till = get_next_reporting_day(dt)
     _, month_days = calendar.monthrange(dt.year, dt.month)
     month_days_left = month_days - dt.day + 1
-    gps = round((till.day - dt.day + 1) * (planned_gp - done_gp) / month_days_left)
-    return gps, till
+    gps_today = (planned_gp - done_gp) / month_days_left
+    gps = (till.day - dt.day + 1) * gps_today
+    return round(gps_today), round(gps), till
 
 
 def compute_kpi_target(kpi_history: pd.Series, kpi_improve_rate: float) -> Tuple[float, float]:
